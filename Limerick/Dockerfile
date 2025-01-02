@@ -16,7 +16,4 @@ WORKDIR /App
 COPY --from=build-env /App/out .
 
 # add ffmpeg
-RUN apt-get -y update && apt-get -y upgrade && apt-get install -y --no-install-recommends ffmpeg
-
-
-ENTRYPOINT ["dotnet", "ChattyGPT.dll"]
+ENTRYPOINT ["dotnet", "Limerick.dll"]

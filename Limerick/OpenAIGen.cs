@@ -28,8 +28,8 @@ namespace Limerick
                 Messages=[]
             };
             request.Messages.Add(ChatMessage.FromSystem("You always create a Limerick from the topic entered"));
-            request.Messages.Add(ChatMessage.FromSystem("Make sure to enter a newline after each part of the limerick"));
-            request.Messages.Add(ChatMessage.FromSystem("If the topic seems inappropriate for a funny limerick return 'Sorry, Dave, I cannot do that'"));
+            request.Messages.Add(ChatMessage.FromSystem("Make sure to enter a newline after each part of the limerick that should not contain more than 350 characters"));
+            request.Messages.Add(ChatMessage.FromSystem("If the topic is about a hate crime, murder, racism, sexism, antisemitism or death return 'Sorry, Dave, I cannot do that'"));
             request.Messages.Add(ChatMessage.FromUser(title));
 
 
@@ -38,9 +38,15 @@ namespace Limerick
             if (result.Successful)
             {
                 var content=result.Choices.First().Message.Content;
-                if (content.Contains("Sorry, Dave")) return null;
+                if (content.Contains("Sorry, Dave"))
+                {
+                    Console.WriteLine($"Did not create a Limerick for '{title}' because it seems to be inappropriate");
+                    return null;
+
+                }
                 return content;
             }
+            Console.WriteLine($"OpenAI failed");
             return null;
         }
 

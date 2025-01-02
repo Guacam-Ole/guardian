@@ -1,37 +1,45 @@
-﻿using Microsoft.SyndicationFeed.Rss;
-using Microsoft.SyndicationFeed;
+﻿using Microsoft.SyndicationFeed;
+using Microsoft.SyndicationFeed.Rss;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Limerick
 {
-
     public record Article
     {
         public string Title { get; set; }
-        public string Url { get; set; } 
+        public string Url { get; set; }
         public DateTimeOffset Date { get; set; }
+        public string[] Categories { get; set; }
     }
 
     public class Rss
     {
         private const string _url = "https://www.theguardian.com/world/europe-news/rss";
 
-        public  async   Task< List<Article>> GetArticlesSince(DateTimeOffset? since) {
-            since ??= DateTimeOffset.Now.AddMinutes(-15);
+        public async Task<IEnumerable<Article>> GetArticlesSince(DateTimeOffset? since)
+        {
+            bool firstCall = since == null;
+            since ??= DateTimeOffset.Now.AddHours(-10);
             var articlesSince = await ReadFeedSince(_url, since.Value);
-            var articles = articlesSince.Select(q => new Article { Date = q.Published, Title = q.Title, Url = q.Links.First().Uri.ToString() }).ToList();
+            var articles = articlesSince.Select(q => new Article
+            {
+                Date = q.Published,
+                Title = q.Title,
+                Url = q.Links.First().Uri.ToString(),
+                Categories = q.Categories.Where(q => q.Name.All(Char.IsLetter)).Select(q => "#" + q.Name).ToArray()
+            });
+
+            if (firstCall && articles.Count() > 1)
+            {
+                return new[] { articles.MaxBy(q => q.Date) };
+            }
             return articles;
         }
 
         public async Task<List<ISyndicationItem>> ReadFeedSince(string url, DateTimeOffset lastKnownEntry)
         {
-            List<ISyndicationItem> items = new List<ISyndicationItem>();
+            List<ISyndicationItem> items = [];
 
             using (var xmlReader = XmlReader.Create(url, new XmlReaderSettings() { Async = true }))
             {
@@ -47,6 +55,5 @@ namespace Limerick
             }
             return items;
         }
-
     }
 }

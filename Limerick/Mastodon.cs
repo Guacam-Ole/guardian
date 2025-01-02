@@ -2,13 +2,11 @@
 
 using Newtonsoft.Json;
 
-
-
 namespace Limerick
 {
     public class Mastodon
     {
-        private MastodonClient Login()
+        private static MastodonClient Login()
         {
             var secrets = JsonConvert.DeserializeObject<Secrets>(File.ReadAllText("secrets.json")) ?? throw new Exception("cannot read secrets");
             return new MastodonClient(secrets.Instance, secrets.AccessToken);
@@ -18,17 +16,17 @@ namespace Limerick
         {
             try
             {
+                string hashtags = "#GuardianLimerick ";
+                if (article.Categories != null) hashtags += string.Join(" ", article.Categories);
+                string contents = article.Title + "\n\n" + hashtags + "\n\n" + article.Url;
+                if (contents.Length > 499) contents = contents[..499];
                 var client = Login();
-                var mainEntry = await client.PublishStatus(article.Title, Visibility.Public);
-                if (!string.IsNullOrEmpty(mainEntry.Id))
-                {
-                    var reply = await client.PublishStatus(article.Url, Visibility.Private, mainEntry.Id, spoilerText: "Guardian Article");
-                }
+                var mainEntry = await client.PublishStatus(contents, Visibility.Public);
+                Console.WriteLine($"Sent '{contents.Length}' chars to mastodon");
             }
             catch (Exception ex)
             {
-
-                throw;
+                Console.WriteLine("Failed sending to mastodon: " + ex.Message);
             }
         }
     }
